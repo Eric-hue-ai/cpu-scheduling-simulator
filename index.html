@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPU Scheduling Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #0f1629;
+    --surface2: #151d35;
+    --border: #1e2d50;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7c3aed;
+    --green: #00ff88;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --danger: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(0,212,255,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.08) 0%, transparent 50%);
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(15,22,41,0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    color: var(--accent);
+    box-shadow: 0 0 15px rgba(0,212,255,0.3);
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  header h1 span { color: var(--accent); }
+
+  .badge {
+    margin-left: auto;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  .algo-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .algo-btn {
+    flex: 1;
+    padding: 14px 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .algo-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .algo-btn.active {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 20px rgba(0,212,255,0.15);
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .process-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+  }
+
+  input.error { border-color: var(--danger); }
+
+  .btn {
+    padding: 11px 20px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover { box-shadow: 0 0 20px rgba(0,212,255,0.4); transform: translateY(-1px); }
+
+  .btn-danger {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+  .btn-danger:hover { background: rgba(255,68,68,0.1); }
+
+  .btn-sample {
+    padding: 16px 24px;
+    background: transparent;
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+    font-size: 13px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .btn-sample:hover {
+    background: rgba(124,58,237,0.15);
+    box-shadow: 0 0 20px rgba(124,58,237,0.2);
+    transform: translateY(-2px);
+  }
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,14,26,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%; max-width: 560px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(20px) }
+    to { opacity:1; transform:translateY(0) }
+  }
+  .modal-title {
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent3); margin-bottom: 20px;
+  }
+  .sample-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .sample-card {
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .sample-card:hover {
+    border-color: var(--accent3);
+    background: rgba(124,58,237,0.08);
+    transform: translateX(4px);
+  }
+  .sample-num {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(124,58,237,0.2); border: 1px solid var(--accent3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Share Tech Mono', monospace; font-size: 14px;
+    color: var(--accent3); flex-shrink: 0;
+  }
+  .sample-info { flex: 1; }
+  .sample-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+  .sample-desc { font-size: 12px; color: var(--muted); font-family: 'Share Tech Mono', monospace; }
+  .sample-arrow { color: var(--muted); font-size: 18px; }
+  .modal-close {
+    width: 100%; padding: 11px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 8px;
+    font-family: 'Exo 2', sans-serif; font-size: 12px;
+    letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+  .btn-simulate {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    color: white;
+    font-size: 14px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.2);
+  }
+  .btn-simulate:hover { box-shadow: 0 4px 30px rgba(0,212,255,0.4); transform: translateY(-2px); }
+
+  .process-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+  }
+
+  .process-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .process-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30,45,80,0.5);
+    vertical-align: middle;
+  }
+
+  .process-table tr:last-child td { border-bottom: none; }
+  .process-table tbody tr { transition: background 0.15s; }
+  .process-table tbody tr:hover { background: rgba(0,212,255,0.04); }
+
+  .pid-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+  }
+
+  .pid-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  /* Gantt Chart */
+  .gantt-wrapper {
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .gantt-chart {
+    display: flex;
+    min-width: max-content;
+    margin-bottom: 8px;
+  }
+
+  .gantt-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .gantt-bar {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    border-right: 2px solid var(--bg);
+    position: relative;
+    transition: filter 0.2s;
+    cursor: default;
+    letter-spacing: 1px;
+  }
+
+  .gantt-bar:hover { filter: brightness(1.2); }
+
+  .gantt-idle {
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(100,116,139,0.2),
+      rgba(100,116,139,0.2) 6px,
+      rgba(100,116,139,0.05) 6px,
+      rgba(100,116,139,0.05) 12px
+    );
+    color: var(--muted);
+  }
+
+  .gantt-times {
+    display: flex;
+    min-width: max-content;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .gantt-time-mark {
+    width: 1px;
+    background: var(--muted);
+    height: 6px;
+    margin-bottom: 2px;
+  }
+
+  /* Results Table */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .results-table th {
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .results-table th:first-child { text-align: left; }
+
+  .results-table td {
+    padding: 12px 16px;
+    text-align: center;
+    border-bottom: 1px solid rgba(30,45,80,0.5);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+  }
+
+  .results-table td:first-child { text-align: left; }
+  .results-table tfoot td {
+    font-weight: 700;
+    color: var(--accent);
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    padding-top: 16px;
+  }
+
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .stat-unit {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  .comment-box {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #94a3b8;
+  }
+
+  .comment-box strong { color: var(--accent); }
+
+  .comment-box ul {
+    margin: 10px 0 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .error-msg {
+    color: var(--danger);
+    font-size: 11px;
+    margin-top: 4px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .priority-note {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .hidden { display: none; }
+
+  .anim-in {
+    animation: fadeUp 0.4s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .priority-low { color: var(--green); }
+  .priority-high { color: var(--accent2); }
+
+  .tooltip {
+    position: relative;
+    cursor: help;
+  }
+
+  /* Process colors */
+  .c0 { background: rgba(0,212,255,0.25); color: #00d4ff; }
+  .c1 { background: rgba(255,107,53,0.25); color: #ff6b35; }
+  .c2 { background: rgba(124,58,237,0.25); color: #a78bfa; }
+  .c3 { background: rgba(0,255,136,0.25); color: #00ff88; }
+  .c4 { background: rgba(251,191,36,0.25); color: #fbbf24; }
+  .c5 { background: rgba(236,72,153,0.25); color: #f472b6; }
+  .c6 { background: rgba(20,184,166,0.25); color: #2dd4bf; }
+  .c7 { background: rgba(99,102,241,0.25); color: #818cf8; }
+
+  .rc0 { color: #00d4ff; }
+  .rc1 { color: #ff6b35; }
+  .rc2 { color: #a78bfa; }
+  .rc3 { color: #00ff88; }
+  .rc4 { color: #fbbf24; }
+  .rc5 { color: #f472b6; }
+  .rc6 { color: #2dd4bf; }
+  .rc7 { color: #818cf8; }
+
+  .dc0 { background: #00d4ff; }
+  .dc1 { background: #ff6b35; }
+  .dc2 { background: #a78bfa; }
+  .dc3 { background: #00ff88; }
+  .dc4 { background: #fbbf24; }
+  .dc5 { background: #f472b6; }
+  .dc6 { background: #2dd4bf; }
+  .dc7 { background: #818cf8; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">⚡</div>
+  <h1>CPU <span>Scheduler</span> Sim</h1>
+  <span class="badge">PRIORITY · NON-PREEMPTIVE</span>
+</header>
+
+<div class="container">
+
+  <!-- Algorithm Selector -->
+  <div class="algo-selector">
+    <button class="algo-btn active" onclick="selectAlgo('FCFS')">FCFS</button>
+    <button class="algo-btn" onclick="selectAlgo('SJF')">SJF (Non-Preemptive)</button>
+    <button class="algo-btn" onclick="selectAlgo('Priority')">Priority (Non-Preemptive)</button>
+  </div>
+
+  <!-- Input Panel -->
+  <div class="panel">
+    <div class="panel-title">Process Input</div>
+    <div class="process-form" id="processForm">
+      <div class="field">
+        <label>Process ID</label>
+        <input type="text" id="inPID" placeholder="e.g. P1" maxlength="8">
+      </div>
+      <div class="field">
+        <label>Arrival Time</label>
+        <input type="number" id="inAT" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>Burst Time</label>
+        <input type="number" id="inBT" placeholder="1" min="1">
+      </div>
+      <div class="field" id="priorityField">
+        <label>Priority <span style="color:var(--accent2)">*</span></label>
+        <input type="number" id="inPri" placeholder="1" min="1">
+        <div class="priority-note">* Lower number = Higher priority</div>
+      </div>
+      <div class="field" style="justify-content:flex-end">
+        <button class="btn btn-primary" onclick="addProcess()">+ Add</button>
+      </div>
+    </div>
+    <div id="formError" class="error-msg hidden"></div>
+  </div>
+
+  <!-- Process List -->
+  <div class="panel">
+    <div class="panel-title">Process Queue</div>
+    <div id="processList">
+      <div class="empty-state">No processes added yet. Add at least 2 to simulate.</div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div style="display:flex; gap:12px; margin-bottom:0;">
+    <button class="btn btn-sample" onclick="loadSample()" style="flex:0 0 auto;">📋 LOAD SAMPLE</button>
+    <button class="btn btn-simulate" onclick="simulate()" style="flex:1;">▶ SIMULATE</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="hidden" style="margin-top: 24px;">
+
+    <!-- Gantt Chart -->
+    <div class="panel anim-in">
+      <div class="panel-title">Gantt Chart</div>
+      <div class="gantt-wrapper">
+        <div id="ganttChart"></div>
+        <div id="ganttTimes" class="gantt-times"></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-cards anim-in" id="statCards"></div>
+
+    <!-- Results Table -->
+    <div class="panel anim-in">
+      <div class="panel-title">Execution Results</div>
+      <table class="results-table" id="resultsTable"></table>
+    </div>
+
+    <!-- Commentary -->
+    <div class="panel anim-in" id="commentaryPanel">
+      <div class="panel-title">Analysis & Commentary</div>
+      <div class="comment-box" id="commentary"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let processes = [];
+  let currentAlgo = 'FCFS';
+  let colorIndex = 0;
+
+  const COLORS = 8;
+
+  function selectAlgo(algo) {
+    currentAlgo = algo;
+    document.querySelectorAll('.algo-btn').forEach((b, i) => {
+      b.classList.toggle('active', ['FCFS','SJF','Priority'][i] === algo);
+    });
+    document.getElementById('priorityField').style.display =
+      algo === 'Priority' ? 'flex' : 'none';
+    clearResults();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('formError');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
+  }
+
+  function addProcess() {
+    const pid = document.getElementById('inPID').value.trim();
+    const at = document.getElementById('inAT').value.trim();
+    const bt = document.getElementById('inBT').value.trim();
+    const pri = document.getElementById('inPri').value.trim();
+
+    if (!pid) return showError('Process ID is required');
+    if (processes.find(p => p.pid === pid)) return showError(`Process "${pid}" already exists`);
+    if (at === '' || isNaN(at) || Number(at) < 0) return showError('Arrival Time must be ≥ 0');
+    if (bt === '' || isNaN(bt) || Number(bt) < 1) return showError('Burst Time must be ≥ 1');
+    if (currentAlgo === 'Priority' && (pri === '' || isNaN(pri) || Number(pri) < 1)) {
+      return showError('Priority must be ≥ 1');
+    }
+
+    const colorIdx = processes.length % COLORS;
+    processes.push({
+      pid,
+      at: Number(at),
+      bt: Number(bt),
+      priority: currentAlgo === 'Priority' ? Number(pri) : null,
+      colorIdx
+    });
+
+    document.getElementById('inPID').value = '';
+    document.getElementById('inAT').value = '';
+    document.getElementById('inBT').value = '';
+    document.getElementById('inPri').value = '';
+    document.getElementById('inPID').focus();
+
+    renderProcessList();
+    clearResults();
+  }
+
+  function removeProcess(pid) {
+    processes = processes.filter(p => p.pid !== pid);
+    // Reassign color indices
+    processes.forEach((p, i) => p.colorIdx = i % COLORS);
+    renderProcessList();
+    clearResults();
+  }
+
+  function renderProcessList() {
+    const el = document.getElementById('processList');
+    if (processes.length === 0) {
+      el.innerHTML = '<div class="empty-state">No processes added yet. Add at least 2 to simulate.</div>';
+      return;
+    }
+
+    const showPri = currentAlgo === 'Priority';
+    let html = `<table class="process-table">
+      <thead><tr>
+        <th>Process</th>
+        <th>Arrival Time</th>
+        <th>Burst Time</th>
+        ${showPri ? '<th>Priority</th>' : ''}
+        <th></th>
+      </tr></thead><tbody>`;
+
+    processes.forEach(p => {
+      html += `<tr>
+        <td><span class="pid-badge">
+          <span class="pid-dot dc${p.colorIdx}"></span>
+          <span class="rc${p.colorIdx}">${p.pid}</span>
+        </span></td>
+        <td>${p.at}</td>
+        <td>${p.bt}</td>
+        ${showPri ? `<td><span class="${p.priority <= 2 ? 'priority-high' : 'priority-low'}">${p.priority}</span></td>` : ''}
+        <td><button class="btn btn-danger" onclick="removeProcess('${p.pid}')">✕</button></td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  }
+
+  function clearResults() {
+    document.getElementById('results').classList.add('hidden');
+  }
+
+  function simulate() {
+    if (processes.length < 1) return alert('Please add at least 1 process.');
+
+    let result;
+    if (currentAlgo === 'FCFS') result = runFCFS();
+    else if (currentAlgo === 'SJF') result = runSJF();
+    else result = runPriority();
+
+    renderResults(result);
+  }
+
+  function runFCFS() {
+    // Sort by arrival time
+    const sorted = [...processes].sort((a, b) => a.at - b.at || a.pid.localeCompare(b.pid));
+    return buildTimeline(sorted, 'FCFS');
+  }
+
+  function runSJF() {
+    const procs = processes.map(p => ({ ...p, remaining: p.bt, done: false }));
+    const order = [];
+    let time = 0;
+    let completed = 0;
+
+    while (completed < procs.length) {
+      const available = procs.filter(p => !p.done && p.at <= time);
+      if (available.length === 0) {
+        time = Math.min(...procs.filter(p => !p.done).map(p => p.at));
+        continue;
+      }
+      available.sort((a, b) => a.bt - b.bt || a.at - b.at);
+      const chosen = available[0];
+      order.push(chosen);
+      time += chosen.bt;
+      chosen.done = true;
+      completed++;
+    }
+    return buildTimeline(order, 'SJF');
+  }
+
+  function runPriority() {
+    const procs = processes.map(p => ({ ...p, done: false }));
+    const order = [];
+    let time = 0;
+    let completed = 0;
+
+    while (completed < procs.length) {
+      const available = procs.filter(p => !p.done && p.at <= time);
+      if (available.length === 0) {
+        time = Math.min(...procs.filter(p => !p.done).map(p => p.at));
+        continue;
+      }
+      // Lower priority number = higher priority
+      available.sort((a, b) => a.priority - b.priority || a.at - b.at);
+      const chosen = available[0];
+      order.push(chosen);
+      time += chosen.bt;
+      chosen.done = true;
+      completed++;
+    }
+    return buildTimeline(order, 'Priority');
+  }
+
+  function buildTimeline(order, algo) {
+    const timeline = [];
+    let time = 0;
+    const processMap = {};
+    processes.forEach(p => processMap[p.pid] = p);
+
+    for (const proc of order) {
+      if (time < proc.at) {
+        timeline.push({ pid: 'IDLE', start: time, end: proc.at, colorIdx: -1 });
+        time = proc.at;
+      }
+      const start = time;
+      time += proc.bt;
+      timeline.push({ pid: proc.pid, start, end: time, colorIdx: proc.colorIdx });
+    }
+
+    // Calculate WT and TAT
+    const results = processes.map(p => {
+      const entry = timeline.find(t => t.pid === p.pid);
+      const completionTime = entry ? entry.end : 0;
+      const tat = completionTime - p.at;
+      const wt = tat - p.bt;
+      return { ...p, completionTime, tat, wt };
+    });
+
+    const avgWT = results.reduce((s, r) => s + r.wt, 0) / results.length;
+    const avgTAT = results.reduce((s, r) => s + r.tat, 0) / results.length;
+
+    return { timeline, results, avgWT, avgTAT, algo };
+  }
+
+  function renderResults({ timeline, results, avgWT, avgTAT, algo }) {
+    document.getElementById('results').classList.remove('hidden');
+
+    // Gantt Chart
+    const totalTime = timeline[timeline.length - 1].end;
+    const scale = Math.max(600, totalTime * 30);
+    const chartDiv = document.getElementById('ganttChart');
+    const timesDiv = document.getElementById('ganttTimes');
+
+    let ganttHTML = '<div class="gantt-chart">';
+    timeline.forEach(block => {
+      const width = Math.max(40, ((block.end - block.start) / totalTime) * scale);
+      const cls = block.pid === 'IDLE' ? 'gantt-idle' : `c${block.colorIdx}`;
+      ganttHTML += `<div class="gantt-block">
+        <div class="gantt-bar ${cls}" style="width:${width}px" title="${block.pid}: ${block.start} → ${block.end}">
+          ${block.pid}
+        </div>
+      </div>`;
+    });
+    ganttHTML += '</div>';
+    chartDiv.innerHTML = ganttHTML;
+
+    // Time markers
+    let timesHTML = '';
+    const allTimes = [...new Set(timeline.flatMap(b => [b.start, b.end]))].sort((a,b)=>a-b);
+    let prevPos = 0;
+    allTimes.forEach((t, i) => {
+      const pos = (t / totalTime) * scale;
+      const gap = i === 0 ? pos : pos - prevPos;
+      timesHTML += `<div style="display:flex;flex-direction:column;align-items:flex-start;width:${gap}px;min-width:${gap}px">
+        <div class="gantt-time-mark"></div>
+        <span>${t}</span>
+      </div>`;
+      prevPos = pos;
+    });
+    // last marker
+    timesHTML += `<div style="display:flex;flex-direction:column;align-items:flex-start">
+      <div class="gantt-time-mark"></div>
+    </div>`;
+    timesDiv.innerHTML = timesHTML;
+
+    // Stat Cards
+    document.getElementById('statCards').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Average Waiting Time</div>
+        <div class="stat-value" style="color:var(--accent)">${avgWT.toFixed(2)}<span class="stat-unit">units</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Average Turnaround Time</div>
+        <div class="stat-value" style="color:var(--accent2)">${avgTAT.toFixed(2)}<span class="stat-unit">units</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Processes</div>
+        <div class="stat-value" style="color:var(--green)">${processes.length}</div>
+      </div>
+    `;
+
+    // Results Table
+    const showPri = algo === 'Priority';
+    let tableHTML = `<thead><tr>
+      <th>Process</th>
+      <th>Arrival</th>
+      <th>Burst</th>
+      ${showPri ? '<th>Priority</th>' : ''}
+      <th>Completion</th>
+      <th>Turnaround</th>
+      <th>Waiting</th>
+    </tr></thead><tbody>`;
+
+    results.forEach(r => {
+      tableHTML += `<tr>
+        <td><span class="pid-badge"><span class="pid-dot dc${r.colorIdx}"></span><span class="rc${r.colorIdx}">${r.pid}</span></span></td>
+        <td>${r.at}</td>
+        <td>${r.bt}</td>
+        ${showPri ? `<td>${r.priority}</td>` : ''}
+        <td>${r.completionTime}</td>
+        <td class="rc${r.colorIdx}">${r.tat}</td>
+        <td class="rc${r.colorIdx}">${r.wt}</td>
+      </tr>`;
+    });
+
+    tableHTML += `</tbody><tfoot><tr>
+      <td colspan="${showPri ? 5 : 4}" style="text-align:right;color:var(--muted)">AVERAGES →</td>
+      <td>${avgTAT.toFixed(2)}</td>
+      <td>${avgWT.toFixed(2)}</td>
+    </tr></tfoot>`;
+
+    document.getElementById('resultsTable').innerHTML = tableHTML;
+
+    // Commentary
+    renderCommentary(algo, results, avgWT, avgTAT);
+  }
+
+  function renderCommentary(algo, results, avgWT, avgTAT) {
+    const panel = document.getElementById('commentaryPanel');
+    const box = document.getElementById('commentary');
+
+    if (algo === 'Priority') {
+      const sortedByPri = [...results].sort((a,b) => a.priority - b.priority);
+      const first = sortedByPri[0];
+      const last = sortedByPri[sortedByPri.length - 1];
+
+      box.innerHTML = `
+        <strong>How Priority Affects Execution (Non-Preemptive)</strong>
+        <ul>
+          <li><strong>${first.pid}</strong> (Priority ${first.priority}) had the highest priority and was scheduled first among available processes, resulting in a waiting time of <strong>${first.wt} units</strong>.</li>
+          <li><strong>${last.pid}</strong> (Priority ${last.priority}) had the lowest priority and waited the longest — <strong>${last.wt} units</strong> — demonstrating that low-priority processes experience starvation risk when high-priority processes continuously arrive.</li>
+          <li>In Non-Preemptive Priority Scheduling, once a process starts, it runs to completion regardless of new arrivals. This means a high-priority process arriving after a lower-priority one has started must wait for it to finish.</li>
+          <li>The average waiting time of <strong>${avgWT.toFixed(2)} units</strong> reflects how priority ordering improves throughput for critical tasks at the cost of fairness to lower-priority processes.</li>
+          <li>To mitigate indefinite starvation, an <strong>aging</strong> technique can be applied — gradually increasing the priority of waiting processes over time.</li>
+        </ul>`;
+    } else if (algo === 'FCFS') {
+      box.innerHTML = `
+        <strong>First Come First Served (FCFS) Analysis</strong>
+        <ul>
+          <li>FCFS is the simplest scheduling algorithm — processes are executed in the order they arrive, with no preemption.</li>
+          <li>The average waiting time is <strong>${avgWT.toFixed(2)} units</strong>. FCFS can suffer from the <em>convoy effect</em> where short processes wait behind long ones.</li>
+          <li>It is non-preemptive and fair in arrival order, but does not optimize for turnaround time or responsiveness.</li>
+          <li>Best suited for batch systems where all jobs have similar burst times.</li>
+        </ul>`;
+    } else {
+      box.innerHTML = `
+        <strong>Shortest Job First — Non-Preemptive Analysis</strong>
+        <ul>
+          <li>SJF selects the process with the shortest burst time among available processes at each scheduling decision point.</li>
+          <li>The average waiting time is <strong>${avgWT.toFixed(2)} units</strong>. SJF is optimal in minimizing average waiting time for a given set of processes.</li>
+          <li>However, it can cause <em>starvation</em> for long processes if shorter ones keep arriving.</li>
+          <li>Requires prior knowledge of burst times, which is often estimated using exponential averaging in practice.</li>
+        </ul>`;
+    }
+
+    panel.style.display = algo === 'Priority' || true ? 'block' : 'none';
+  }
+
+  const SAMPLES = {
+    FCFS: [
+      { name: 'Classic FCFS', desc: '4 procs · convoy effect demo',
+        data: [
+          { pid:'P1', at:0, bt:5, priority:null },
+          { pid:'P2', at:1, bt:3, priority:null },
+          { pid:'P3', at:2, bt:8, priority:null },
+          { pid:'P4', at:3, bt:2, priority:null },
+        ]},
+      { name: 'With CPU Idle', desc: '3 procs · gaps between arrivals',
+        data: [
+          { pid:'P1', at:0, bt:3, priority:null },
+          { pid:'P2', at:7, bt:4, priority:null },
+          { pid:'P3', at:12, bt:2, priority:null },
+        ]},
+      { name: 'Simultaneous Arrivals', desc: '5 procs · all arrive at t=0',
+        data: [
+          { pid:'P1', at:0, bt:6, priority:null },
+          { pid:'P2', at:0, bt:2, priority:null },
+          { pid:'P3', at:0, bt:8, priority:null },
+          { pid:'P4', at:0, bt:3, priority:null },
+          { pid:'P5', at:0, bt:4, priority:null },
+        ]},
+    ],
+    SJF: [
+      { name: 'Standard SJF', desc: '4 procs · shortest picked each time',
+        data: [
+          { pid:'P1', at:0, bt:7, priority:null },
+          { pid:'P2', at:2, bt:4, priority:null },
+          { pid:'P3', at:4, bt:1, priority:null },
+          { pid:'P4', at:5, bt:4, priority:null },
+        ]},
+      { name: 'Starvation Risk', desc: '5 procs · long process kept waiting',
+        data: [
+          { pid:'P1', at:0, bt:10, priority:null },
+          { pid:'P2', at:1, bt:2, priority:null },
+          { pid:'P3', at:2, bt:1, priority:null },
+          { pid:'P4', at:3, bt:3, priority:null },
+          { pid:'P5', at:4, bt:2, priority:null },
+        ]},
+      { name: 'Optimal Spread', desc: '4 procs · well-distributed bursts',
+        data: [
+          { pid:'P1', at:0, bt:6, priority:null },
+          { pid:'P2', at:1, bt:2, priority:null },
+          { pid:'P3', at:2, bt:4, priority:null },
+          { pid:'P4', at:3, bt:8, priority:null },
+        ]},
+    ],
+    Priority: [
+      { name: 'Priority Inversion', desc: '4 procs · high-priority arrives late',
+        data: [
+          { pid:'P1', at:0, bt:4, priority:3 },
+          { pid:'P2', at:1, bt:3, priority:1 },
+          { pid:'P3', at:2, bt:1, priority:2 },
+          { pid:'P4', at:3, bt:5, priority:4 },
+        ]},
+      { name: 'Starvation Demo', desc: '5 procs · P5 lowest priority',
+        data: [
+          { pid:'P1', at:0, bt:3, priority:2 },
+          { pid:'P2', at:1, bt:5, priority:1 },
+          { pid:'P3', at:2, bt:2, priority:3 },
+          { pid:'P4', at:3, bt:4, priority:1 },
+          { pid:'P5', at:4, bt:6, priority:5 },
+        ]},
+      { name: 'Equal Priority', desc: '4 procs · same priority → FCFS order',
+        data: [
+          { pid:'P1', at:0, bt:4, priority:1 },
+          { pid:'P2', at:1, bt:2, priority:1 },
+          { pid:'P3', at:3, bt:6, priority:1 },
+          { pid:'P4', at:5, bt:3, priority:1 },
+        ]},
+    ]
+  };
+
+  function loadSample() {
+    const samples = SAMPLES[currentAlgo];
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'sampleModal';
+    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+    let cardsHTML = samples.map((s, i) => `
+      <div class="sample-card" onclick="applySample(${i})">
+        <div class="sample-num">${i+1}</div>
+        <div class="sample-info">
+          <div class="sample-name">${s.name}</div>
+          <div class="sample-desc">${s.desc}</div>
+        </div>
+        <div class="sample-arrow">&#8594;</div>
+      </div>`).join('');
+
+    modal.innerHTML = `
+      <div class="modal">
+        <div class="modal-title">&#128203; Load Sample &#8212; ${currentAlgo}</div>
+        <div class="sample-grid">${cardsHTML}</div>
+        <button class="modal-close" onclick="closeModal()">&#x2715; &nbsp;Close</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function closeModal() {
+    const m = document.getElementById('sampleModal');
+    if (m) m.remove();
+  }
+
+  function applySample(idx) {
+    const sample = SAMPLES[currentAlgo][idx];
+    processes = sample.data.map((p, i) => ({ ...p, colorIdx: i % COLORS }));
+    renderProcessList();
+    clearResults();
+    closeModal();
+  }
+
+  // Initialize
+  selectAlgo('Priority');
+  // Pre-load default sample
+  processes = [
+    { pid: 'P1', at: 0, bt: 4, priority: 3, colorIdx: 0 },
+    { pid: 'P2', at: 1, bt: 3, priority: 1, colorIdx: 1 },
+    { pid: 'P3', at: 2, bt: 1, priority: 2, colorIdx: 2 },
+    { pid: 'P4', at: 3, bt: 5, priority: 4, colorIdx: 3 },
+  ];
+  renderProcessList();
+</script>
+</body>
+</html>
